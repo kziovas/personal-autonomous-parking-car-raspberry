@@ -3,7 +3,7 @@ from .motor_controller import MotorController
 from .ultrasonic_controller import UltrasonicController
 from .servo_controller import ServoController
 import keyboard as kb
-import subprocess
+from multiprocessing import Process
 from utilities import blink_leds, run_cleanup
 from time import sleep, time
 from typing import List
@@ -17,18 +17,18 @@ class CarController:
 
     def __init__(self) -> None:
         run_cleanup()
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-         # Set pin 8 to be an output pin and set initial value to low (off)
-        GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) 
         self.motor = MotorController()
         self.servo = ServoController()
-        self.sensor = UltrasonicController()  
-
-
+        self.sensor = UltrasonicController() 
+        self.is_free_to_park = True
+        # Set pin 8 to be an output pin and set initial value to low (off)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) 
 
     def park_if_possible(self)->bool:
-        danger_lights=subprocess.Popen(blink_leds)
+        danger_lights=Process(target=blink_leds)
+        danger_lights.start()
         distances = self.scan_spot()
         is_parked = False
 
@@ -45,6 +45,7 @@ class CarController:
         sleep(2)
         danger_lights.terminate()
         GPIO.output(2, GPIO.LOW)
+        danger_lights.join()
         return is_parked
 
 
@@ -204,14 +205,15 @@ class CarController:
         else:
             pass
             
-        if kb.is_pressed('p'):
+        if kb.is_pressed('p') and self.is_free_to_park:
+            self.is_free_to_park=False
             self.park_if_possible()
+            self.is_free_to_park= True
         if kb.is_pressed('s'):
             self.motor.stop()
         self.motor.stop()
         
 if __name__ == '__main__':
-        
+    car_controller = CarController()
     while True:
-      car_controller = CarController()
       car_controller.run()

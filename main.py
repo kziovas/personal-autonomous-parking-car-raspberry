@@ -1,8 +1,9 @@
 from controllers import CarController
 
 def main ():
+    car_controller = CarController()
+    print("System initialized succesfully!")
     while True:
-      car_controller = CarController()
       car_controller.run()
 
 

@@ -18,7 +18,6 @@ class MotorController:
         self.EnaD = EnaD
         self.In1D = In1D
         self.In2D = In2D
-        run_cleanup()
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
         GPIO.setup(self.EnaA, GPIO.OUT)
