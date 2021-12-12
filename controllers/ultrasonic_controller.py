@@ -1,12 +1,11 @@
 import RPi.GPIO as GPIO
 import time
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
  
 
 class UltrasonicController():
     def __init__(self, trigger_pin: int = 19, echo_pin: int = 13):
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
         self.trigger_pin = trigger_pin
         self.echo_pin = echo_pin
         GPIO.setup(trigger_pin, GPIO.OUT)

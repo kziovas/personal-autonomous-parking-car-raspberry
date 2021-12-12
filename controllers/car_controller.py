@@ -1,43 +1,48 @@
 import RPi.GPIO as GPIO
-from MotorModule import Motor
+from controllers import MotorController, UltrasonicController, ServoController
 import keyboard as kb
 import subprocess
 from time import sleep, time
 from typing import List
-import ultrasonic as us
 from statistics import mean
-import servo_scan as scan
 
 
-class RobotController:
+
+class CarController:
     RETRIES = 3
-    GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) # Set pin 8 to be an output pin and set initial value to low (off)
+
+    # Set pin 8 to be an output pin and set initial value to low (off)
+    GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) 
 
     def __init__(self) -> None:
-        self.motor = Motor()
-        self.servo = scan.ServoController()
-        self.sensor = us.UltrasonicController()  
+        self.motor = MotorController()
+        self.servo = ServoController()
+        self.sensor = UltrasonicController()  
 
 
 
-    def park_if_possible():
+    def park_if_possible(self)->bool:
         danger_lights=subprocess.Popen(['python', 'led.py'])
-        distances = scan_spot()
+        distances = self.scan_spot()
+        is_parked = False
 
-        if is_spot_aceptable(distances):
+        if self.is_spot_aceptable(distances):
             print("Parking...")
             #move_in_spot()
             print("Parking complete")
+            is_parked= True
             
         else:
             print("This spot is not large enough!\nLets keep looking!")
+
         
         sleep(2)
         danger_lights.terminate()
         GPIO.output(2, GPIO.LOW)
+        return is_parked
 
 
-    def is_spot_aceptable(distances: List[int]) -> bool:
+    def is_spot_aceptable(self,distances: List[int]) -> bool:
 
         if any(x<25 for x in distances):
             return False
@@ -45,18 +50,18 @@ class RobotController:
             return True
 
 
-    def move_in_spot():
+    def move_in_spot(self)->None:
         end_time = time()+0.6
 
         while time() < end_time:
-            move_car("right", speed=0.3)
+            self.move_car("right", speed=0.3)
             sleep(0.1)
 
-        move_car("stop")
+        self.move_car("stop")
 
 
    
-    def scan_spot():
+    def scan_spot(self) -> list:
         distances = []
         for i in range(10,1,-2):
             self.servo.look(angle=i)
@@ -68,7 +73,7 @@ class RobotController:
                 retries += 1
                 for _ in range(1,10):
                     sleep(0.05)
-                    measurements.append(sensor.distance())
+                    measurements.append(self.sensor.distance())
                     sleep(0.05)
 
                 #Filter extreme values from measurements
@@ -86,7 +91,7 @@ class RobotController:
         print(distances)
         return distances
 
-    def move_car(direction: str = None, speed:float = 0.7):
+    def move_car(self,direction: str = None, speed:float = 0.7) -> None:
 
         #forward
         if direction == "forward":
@@ -162,39 +167,39 @@ class RobotController:
 
 
 
-    def run():
+    def run(self)->None:
         
         #MOVE FORWORD / BACKWORDS
         if kb.keyboard.is_pressed('x'):
-            move_car("forward")
+            self.move_car("forward")
         elif kb.keyboard.is_pressed('w'):
-            move_car("backward")
+            self.move_car("backward")
         
         #MOVE SIDEWAYS    
         elif kb.keyboard.is_pressed('a'):
-            move_car("left")
+            self.move_car("left")
         elif kb.keyboard.is_pressed('d'):
-            move_car("right")
+            self.move_car("right")
         
         #MOVE DIAGONALLY    
         elif kb.keyboard.is_pressed('q'):
-            move_car("left-forward")
+            self.move_car("left-forward")
         elif kb.keyboard.is_pressed('e'):
-            move_car("right-forward")
+            self.move_car("right-forward")
         elif kb.keyboard.is_pressed('z'):
-            move_car("left-backward")
+            self.move_car("left-backward")
         elif kb.keyboard.is_pressed('c'):
-            move_car("right-backward")
+            self.move_car("right-backward")
         #ROTATE    
         elif kb.keyboard.is_pressed('k'):
-            move_car("rotate-clockwise")
+            self.move_car("rotate-clockwise")
         elif kb.keyboard.is_pressed('l'):
-            move_car("rotate-anticlockwise")
+            self.move_car("rotate-anticlockwise")
         else:
             pass
             
         if kb.keyboard.is_pressed('p'):
-            park_if_possible()
+            self.park_if_possible()
         if kb.keyboard.is_pressed('KP0'):
             self.motor.stop()
         self.motor.stop()
@@ -202,5 +207,5 @@ class RobotController:
 if __name__ == '__main__':
         
     while True:
-      robot = RobotController()
-      robot.run()
+      car_controller = CarController()
+      car_controller.run()

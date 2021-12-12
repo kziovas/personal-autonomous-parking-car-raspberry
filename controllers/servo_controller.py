@@ -1,10 +1,8 @@
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 from time import sleep # Import the sleep function from the time module
-import ultrasonic as us
-import time
+from controllers import UltrasonicController 
 
-GPIO.setwarnings(False) # Ignore warning for now
-GPIO.setmode(GPIO.BCM)
+
 
 
 class ServoController():
@@ -16,9 +14,11 @@ class ServoController():
         self.cycle_end = cycle_end
         self.rest_position = rest_position
         self.pwm_freq = pwm_freq
+        GPIO.setwarnings(False) # Ignore warning for now
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
         self.pwm = GPIO.PWM(pin,pwm_freq)
-        self.sensor = us.UltrasonicController()
+        self.sensor = UltrasonicController()
         self.pwm.start(0)
         
         
@@ -78,11 +78,4 @@ if __name__ == "__main__":
 
     servo = ServoController()
     servo.run_scan()
-    #sleep(1)
-    #servo.look("ahead")
-    #sleep(1)
-    #servo.look("middle")
-    #sleep(1)
-    #servo.look("back")
-    #sleep(1)
-    #servo.look("middle")
+
