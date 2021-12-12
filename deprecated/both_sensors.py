@@ -1,7 +1,7 @@
 from gpiozero import DistanceSensor
 import RPi.GPIO as GPIO
 from time import sleep
-from MotorModule import Motor
+from controllers import Motor
 import subprocess
 from subprocess import check_call
 

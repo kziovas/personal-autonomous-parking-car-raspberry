@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 from time import sleep # Import the sleep function from the time module
-from controllers import UltrasonicController 
+from .ultrasonic_controller import UltrasonicController 
 
 
 
@@ -61,7 +61,7 @@ class ServoController():
                 self.pwm.ChangeDutyCycle(0)
         elif angle >= 2 and angle <=10 :
                 self.pwm.ChangeDutyCycle(angle)
-                sleep(0.7)
+                sleep(0.5)
                 self.pwm.ChangeDutyCycle(0)
         else:
             self.pwm.ChangeDutyCycle(self.rest_position)

@@ -1,7 +1,7 @@
 # Needed modules will be imported and configured 
 import RPi.GPIO as GPIO
 import time
-from MotorModule import Motor
+from controllers.motor_controller import Motor
 import subprocess
 from subprocess import check_call
   

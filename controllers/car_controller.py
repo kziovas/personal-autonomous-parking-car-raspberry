@@ -1,7 +1,10 @@
 import RPi.GPIO as GPIO
-from controllers import MotorController, UltrasonicController, ServoController
+from .motor_controller import MotorController
+from .ultrasonic_controller import UltrasonicController
+from .servo_controller import ServoController
 import keyboard as kb
 import subprocess
+from utilities import blink_leds, run_cleanup
 from time import sleep, time
 from typing import List
 from statistics import mean
@@ -10,11 +13,14 @@ from statistics import mean
 
 class CarController:
     RETRIES = 3
-
-    # Set pin 8 to be an output pin and set initial value to low (off)
-    GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) 
+  
 
     def __init__(self) -> None:
+        run_cleanup()
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+         # Set pin 8 to be an output pin and set initial value to low (off)
+        GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) 
         self.motor = MotorController()
         self.servo = ServoController()
         self.sensor = UltrasonicController()  
@@ -22,7 +28,7 @@ class CarController:
 
 
     def park_if_possible(self)->bool:
-        danger_lights=subprocess.Popen(['python', 'led.py'])
+        danger_lights=subprocess.Popen(blink_leds)
         distances = self.scan_spot()
         is_parked = False
 
@@ -170,37 +176,37 @@ class CarController:
     def run(self)->None:
         
         #MOVE FORWORD / BACKWORDS
-        if kb.keyboard.is_pressed('x'):
+        if kb.is_pressed('x'):
             self.move_car("forward")
-        elif kb.keyboard.is_pressed('w'):
+        elif kb.is_pressed('w'):
             self.move_car("backward")
         
         #MOVE SIDEWAYS    
-        elif kb.keyboard.is_pressed('a'):
+        elif kb.is_pressed('a'):
             self.move_car("left")
-        elif kb.keyboard.is_pressed('d'):
+        elif kb.is_pressed('d'):
             self.move_car("right")
         
         #MOVE DIAGONALLY    
-        elif kb.keyboard.is_pressed('q'):
+        elif kb.is_pressed('q'):
             self.move_car("left-forward")
-        elif kb.keyboard.is_pressed('e'):
+        elif kb.is_pressed('e'):
             self.move_car("right-forward")
-        elif kb.keyboard.is_pressed('z'):
+        elif kb.is_pressed('z'):
             self.move_car("left-backward")
-        elif kb.keyboard.is_pressed('c'):
+        elif kb.is_pressed('c'):
             self.move_car("right-backward")
         #ROTATE    
-        elif kb.keyboard.is_pressed('k'):
+        elif kb.is_pressed('k'):
             self.move_car("rotate-clockwise")
-        elif kb.keyboard.is_pressed('l'):
+        elif kb.is_pressed('l'):
             self.move_car("rotate-anticlockwise")
         else:
             pass
             
-        if kb.keyboard.is_pressed('p'):
+        if kb.is_pressed('p'):
             self.park_if_possible()
-        if kb.keyboard.is_pressed('KP0'):
+        if kb.is_pressed('s'):
             self.motor.stop()
         self.motor.stop()
         
