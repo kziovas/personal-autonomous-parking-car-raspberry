@@ -14,10 +14,10 @@ This simply project is meant to illustrate how an autonomous parking assistance 
 The expected operational process would be as follows:
 
 1) Under normal driving status the driver operates the electric car through a remote control
-2) When the driver decided that he/she wishes to park somewhere they initiate the parking assistance procedure
+2) When the driver decides that he/she wishes to park somewhere, he/she initiates the parking assistance procedure
 3) The parking assistance module searches the near vicinity of the car with its ultrasonic sensor for an appropriate parking spot where the car could fit
-4) If the spot is identified the car makes the requried manoevres and performs teh parking operation autonomosly.
-5) If no appropriate parking spot is identified the car notifys the driver to resume driving
+4) If the spot is identified the car makes the required manoeuvres and performs the parking operation autonomously.
+5) If no appropriate parking spot is identified the car notifies the driver to resume driving
 
 # Design
 
