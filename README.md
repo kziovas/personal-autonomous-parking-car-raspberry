@@ -20,7 +20,7 @@ The expected operational process would be as follows:
 5) If no appropriate parking spot is identified the car notifies the driver to resume driving
 
 # Design
-
+![Robot Schematic](https://github.com/kziovas/personal-autonomous-parking-car-raspberry/blob/main/assets/electronic_components_drawing.png)
 
 # Hardware
 
