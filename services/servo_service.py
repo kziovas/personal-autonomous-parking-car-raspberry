@@ -1,11 +1,13 @@
 import RPi.GPIO as GPIO # Import Raspberry Pi GPIO library
 from time import sleep # Import the sleep function from the time module
-from .ultrasonic_controller import UltrasonicController 
+from .ultrasonic_service import UltrasonicService 
+from utilities import HealthStatus
+from injector import singleton
 
 
 
-
-class ServoController():
+@singleton
+class ServoService():
     
     def __init__(self, pin: int = 26, cycle_start: float = 3, cycle_step: float = 3,
                  cycle_end: float = 9, rest_position: float = 6, pwm_freq: float = 50):
@@ -18,7 +20,7 @@ class ServoController():
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(pin, GPIO.OUT, initial=GPIO.LOW)
         self.pwm = GPIO.PWM(pin,pwm_freq)
-        self.sensor = UltrasonicController()
+        self.sensor = UltrasonicService()
         self.pwm.start(0)
         
         
@@ -69,6 +71,16 @@ class ServoController():
             self.pwm.ChangeDutyCycle(0)
             print("Invalid angle provided for servo!")
             print("Angles should be from 3 to 9")
+
+    def health_check(self) -> HealthStatus.value:
+        try:
+            self.run_scan()
+            status = HealthStatus.HEALTHY.value
+        except Exception as exc:
+            status = HealthStatus.UNHEATLHY.value
+        finally:
+            return status
+
     
        
         
@@ -76,6 +88,6 @@ class ServoController():
 
 if __name__ == "__main__":
 
-    servo = ServoController()
+    servo = ServoService()
     servo.run_scan()
 

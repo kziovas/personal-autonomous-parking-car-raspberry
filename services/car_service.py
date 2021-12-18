@@ -1,26 +1,32 @@
 import RPi.GPIO as GPIO
-from .motor_controller import MotorController
-from .ultrasonic_controller import UltrasonicController
-from .servo_controller import ServoController
+from .motor_service import MotorService
+from .ultrasonic_service import UltrasonicService
+from .servo_service import ServoService
 import keyboard as kb
 from multiprocessing import Process
 from utilities import blink_leds, run_cleanup
 from time import sleep, time
 from typing import List
 from statistics import mean
+from injector import inject, singleton
 
 
-
-class CarController:
-    RETRIES = 3
-  
-
-    def __init__(self) -> None:
+@singleton
+class CarService:
+      
+    @inject
+    def __init__(
+        self,
+        motor_service: MotorService,
+        ultrasonic_service: UltrasonicService,
+        servo_service: ServoService
+    ) -> None:
         run_cleanup()
-        self.motor = MotorController()
-        self.servo = ServoController()
-        self.sensor = UltrasonicController() 
+        self.motor = motor_service
+        self.servo = servo_service
+        self.sensor = ultrasonic_service
         self.is_free_to_park = True
+        self.retries = 3
         # Set pin 8 to be an output pin and set initial value to low (off)
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
@@ -66,7 +72,6 @@ class CarController:
 
         self.move_car("stop")
 
-
    
     def scan_spot(self) -> list:
         distances = []
@@ -75,8 +80,8 @@ class CarController:
             measurements = []
             distance = 0
             retries = 0
-            while distance ==0 and retries<=self.RETRIES :
-                print(retries)
+            while distance ==0 and retries<=self.retries :
+                print(f"Number of retries: {retries}")
                 retries += 1
                 for _ in range(1,10):
                     sleep(0.05)
@@ -172,8 +177,6 @@ class CarController:
             self.motor.stop()
         
 
-
-
     def run(self)->None:
         
         #MOVE FORWORD / BACKWORDS
@@ -214,6 +217,6 @@ class CarController:
         self.motor.stop()
         
 if __name__ == '__main__':
-    car_controller = CarController()
+    car_controller = CarService()
     while True:
       car_controller.run()

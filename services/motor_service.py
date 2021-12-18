@@ -1,9 +1,10 @@
 import RPi.GPIO as GPIO
-from utilities import run_cleanup
 from time import sleep
+from utilities import HealthStatus, run_cleanup
+from injector import singleton
 
-
-class MotorController:
+@singleton
+class MotorService:
     
     def __init__(self, EnaA = 10,In1A = 3,In2A = 4, EnaB=22,In1B=17,In2B=27, EnaC=25, In1C=24, In2C=23, EnaD=14, In1D=18, In2D=15):
         self.EnaA = EnaA
@@ -136,6 +137,20 @@ class MotorController:
         self.pwmC.ChangeDutyCycle(0)
         self.pwmD.ChangeDutyCycle(0)
         sleep(t)
+
+    def health_check(self)->HealthStatus.value:
+        
+        try:
+            self.move(wheel='ALL', speed=0.4)
+            sleep(0.5)
+            self.move(wheel='ALL', speed=-0.4)
+            sleep(0.6)
+            status = HealthStatus.HEALTHY.value
+        except Exception as exc:
+            status = HealthStatus.UNHEATLHY.value
+        finally:
+            return status
+
      
 if __name__ == '__main__':
     pass
