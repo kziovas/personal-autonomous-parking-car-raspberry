@@ -41,7 +41,7 @@ class UltrasonicService():
      
         return distance
 
-    def health_check(self)->bool: 
+    def health_check(self)->str: 
         try:
             status = HealthStatus.UNHEATLHY.value
             distance1 = self.distance()

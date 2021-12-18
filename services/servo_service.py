@@ -72,7 +72,7 @@ class ServoService():
             print("Invalid angle provided for servo!")
             print("Angles should be from 3 to 9")
 
-    def health_check(self) -> HealthStatus.value:
+    def health_check(self) -> str:
         try:
             self.run_scan()
             status = HealthStatus.HEALTHY.value

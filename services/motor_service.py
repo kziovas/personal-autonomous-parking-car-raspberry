@@ -138,7 +138,7 @@ class MotorService:
         self.pwmD.ChangeDutyCycle(0)
         sleep(t)
 
-    def health_check(self)->HealthStatus.value:
+    def health_check(self)->str:
         
         try:
             self.move(wheel='ALL', speed=0.4)
