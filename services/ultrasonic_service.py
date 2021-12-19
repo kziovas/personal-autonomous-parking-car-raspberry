@@ -1,10 +1,12 @@
 import RPi.GPIO as GPIO
 import time
 from utilities import HealthStatus
-from injector import singleton
+from injector import inject, singleton
+
  
 @singleton
 class UltrasonicService():
+    @inject
     def __init__(self, trigger_pin: int = 19, echo_pin: int = 13):
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
@@ -12,7 +14,6 @@ class UltrasonicService():
         self.echo_pin = echo_pin
         GPIO.setup(trigger_pin, GPIO.OUT)
         GPIO.setup(echo_pin, GPIO.IN)
-        
 
     def distance(self):
         # set Trigger to HIGH
@@ -41,7 +42,8 @@ class UltrasonicService():
      
         return distance
 
-    def health_check(self)->str: 
+
+    def health_check(self)->dict: 
         try:
             status = HealthStatus.UNHEATLHY.value
             distance1 = self.distance()
@@ -53,7 +55,7 @@ class UltrasonicService():
         except Exception as exc:
             status = HealthStatus.UNHEATLHY.value
         finally:
-            return status
+            return {"ultrasonic_sensor":status}
  
 if __name__ == '__main__':
     

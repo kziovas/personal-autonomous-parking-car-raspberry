@@ -1,4 +1,7 @@
+from asyncio.tasks import as_completed
 import RPi.GPIO as GPIO
+import asyncio
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from .motor_service import MotorService
 from .ultrasonic_service import UltrasonicService
 from .servo_service import ServoService
@@ -9,6 +12,8 @@ from time import sleep, time
 from typing import List
 from statistics import mean
 from injector import inject, singleton
+
+from services import ultrasonic_service
 
 
 @singleton
@@ -21,16 +26,12 @@ class CarService:
         ultrasonic_service: UltrasonicService,
         servo_service: ServoService
     ) -> None:
-        run_cleanup()
         self.motor = motor_service
         self.servo = servo_service
         self.sensor = ultrasonic_service
         self.is_free_to_park = True
         self.retries = 3
-        # Set pin 8 to be an output pin and set initial value to low (off)
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        GPIO.setup(2, GPIO.OUT, initial=GPIO.LOW) 
+    
 
     def park_if_possible(self)->bool:
         danger_lights=Process(target=blink_leds)
@@ -215,6 +216,20 @@ class CarService:
         if kb.is_pressed('s'):
             self.motor.stop()
         self.motor.stop()
+
+
+    async def health_check(self)->dict:
+        health_status = {}
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            loop = asyncio.get_running_loop()
+            checks = [self.motor.health_check,self.sensor.health_check,self.servo.health_check]
+            for check in checks:
+                future = loop.run_in_executor(executor,check)
+                result = await asyncio.wait_for(future, timeout=5, loop=loop)
+                health_status.update(result)
+
+
+        return health_status
         
 if __name__ == '__main__':
     car_controller = CarService()

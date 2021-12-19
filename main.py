@@ -2,6 +2,7 @@ from services import CarService
 from sanic import Sanic
 from api import car_system_controller, create_healthcheck_controller, HealthCheckController, create_car_system_controller, CarSystemController
 from injector import Injector
+from core import CoreModule
 
 def main_car ():
     car_controller = CarService()
@@ -11,15 +12,13 @@ def main_car ():
 
 
 def main():
-  injector = Injector()
+  injector = Injector([CoreModule])
   sanic_app = Sanic("CarApp")
   
   healthcheck_controller = injector.get(HealthCheckController)
   car_system_controller = injector.get(CarSystemController)
   create_healthcheck_controller(healthcheck_controller, sanic_app)
   create_car_system_controller(car_system_controller,sanic_app)
-
-  car_controller = injector.get(CarService)
 
   #sanic_app.register_listener(app.run, "before_server_start")
 
