@@ -7,11 +7,13 @@ from .ultrasonic_service import UltrasonicService
 from .servo_service import ServoService
 import keyboard as kb
 from multiprocessing import Process
-from utilities import blink_leds, run_cleanup
+from utilities import LEDUtil
 from time import sleep, time
 from typing import List
 from statistics import mean
 from injector import inject, singleton
+from threading import Thread
+
 
 from services import ultrasonic_service
 
@@ -24,19 +26,24 @@ class CarService:
         self,
         motor_service: MotorService,
         ultrasonic_service: UltrasonicService,
-        servo_service: ServoService
+        servo_service: ServoService,
+        led:LEDUtil
     ) -> None:
         self.motor = motor_service
         self.servo = servo_service
         self.sensor = ultrasonic_service
+        self.led = led
         self.is_free_to_park = True
         self.retries = 3
+        self._running = False
     
 
-    def park_if_possible(self)->bool:
-        danger_lights=Process(target=blink_leds)
+    async def park_if_possible(self)->bool:
+        danger_lights = Process(target=self.led.blink_leds)
+        #danger_lights = Thread(target = blink_leds)
+        #danger_lights = asyncio.create_task(self.led.blink_leds())
         danger_lights.start()
-        distances = self.scan_spot()
+        distances = await self.scan_spot()
         is_parked = False
 
         if self.is_spot_aceptable(distances):
@@ -49,10 +56,9 @@ class CarService:
             print("This spot is not large enough!\nLets keep looking!")
 
         
-        sleep(2)
-        danger_lights.terminate()
-        GPIO.output(2, GPIO.LOW)
-        danger_lights.join()
+
+        self.led.stop_leds()
+        danger_lights.kill()
         return is_parked
 
 
@@ -64,17 +70,17 @@ class CarService:
             return True
 
 
-    def move_in_spot(self)->None:
+    async def move_in_spot(self)->None:
         end_time = time()+0.6
 
         while time() < end_time:
             self.move_car("right", speed=0.3)
-            sleep(0.1)
+            await asyncio.sleep(0.1)
 
         self.move_car("stop")
 
    
-    def scan_spot(self) -> list:
+    async def scan_spot(self) -> list:
         distances = []
         for i in range(10,1,-2):
             self.servo.look(angle=i)
@@ -85,9 +91,9 @@ class CarService:
                 print(f"Number of retries: {retries}")
                 retries += 1
                 for _ in range(1,10):
-                    sleep(0.05)
+                    await asyncio.sleep(0.05)
                     measurements.append(self.sensor.distance())
-                    sleep(0.05)
+                    await asyncio.sleep(0.05)
 
                 #Filter extreme values from measurements
                 filtered_measurements = [x  for x in measurements if x <(1.5*mean(measurements)) and x > mean(measurements)/1.5]
@@ -95,7 +101,7 @@ class CarService:
                     distance = mean(filtered_measurements)
                 else:
                     distance = 0
-        
+            await asyncio.sleep(0.01)
 
             distances.append(distance)
             print(distance)
@@ -178,45 +184,50 @@ class CarService:
             self.motor.stop()
         
 
-    def run(self)->None:
-        
-        #MOVE FORWORD / BACKWORDS
-        if kb.is_pressed('x'):
-            self.move_car("forward")
-        elif kb.is_pressed('w'):
-            self.move_car("backward")
-        
-        #MOVE SIDEWAYS    
-        elif kb.is_pressed('a'):
-            self.move_car("left")
-        elif kb.is_pressed('d'):
-            self.move_car("right")
-        
-        #MOVE DIAGONALLY    
-        elif kb.is_pressed('q'):
-            self.move_car("left-forward")
-        elif kb.is_pressed('e'):
-            self.move_car("right-forward")
-        elif kb.is_pressed('z'):
-            self.move_car("left-backward")
-        elif kb.is_pressed('c'):
-            self.move_car("right-backward")
-        #ROTATE    
-        elif kb.is_pressed('k'):
-            self.move_car("rotate-clockwise")
-        elif kb.is_pressed('l'):
-            self.move_car("rotate-anticlockwise")
-        else:
-            pass
+    async def run(self)->None:
+        self._running = True
+        while self._running:
+            #MOVE FORWORD / BACKWORDS
+            if kb.is_pressed('x'):
+                self.move_car("forward")
+            elif kb.is_pressed('w'):
+                self.move_car("backward")
             
-        if kb.is_pressed('p') and self.is_free_to_park:
-            self.is_free_to_park=False
-            self.park_if_possible()
-            self.is_free_to_park= True
-        if kb.is_pressed('s'):
-            self.motor.stop()
-        self.motor.stop()
+            #MOVE SIDEWAYS    
+            elif kb.is_pressed('a'):
+                self.move_car("left")
+            elif kb.is_pressed('d'):
+                self.move_car("right")
+            
+            #MOVE DIAGONALLY    
+            elif kb.is_pressed('q'):
+                self.move_car("left-forward")
+            elif kb.is_pressed('e'):
+                self.move_car("right-forward")
+            elif kb.is_pressed('z'):
+                self.move_car("left-backward")
+            elif kb.is_pressed('c'):
+                self.move_car("right-backward")
+            #ROTATE    
+            elif kb.is_pressed('k'):
+                self.move_car("rotate-clockwise")
+            elif kb.is_pressed('l'):
+                self.move_car("rotate-anticlockwise")
+              
+            elif kb.is_pressed('p') and self.is_free_to_park:
+                self.is_free_to_park=False
+                parked = await self.park_if_possible()
+                self.is_free_to_park= True
+            elif kb.is_pressed('s'):
+                self.motor.stop()
+            else: 
+                self.motor.stop()        
+            
+            await asyncio.sleep(0.01)
+        
 
+    def stop(self):
+        self._running = False
 
     async def health_check(self)->dict:
         health_status = {}

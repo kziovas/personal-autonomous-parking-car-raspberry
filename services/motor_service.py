@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 from time import sleep
 from utilities import HealthStatus, run_cleanup
-from injector import inject, singleton, inject
+from injector import inject, singleton
 
 
 @singleton
